@@ -4,14 +4,26 @@ import 'dart:io';
 import 'package:args/command_runner.dart';
 
 class AndroidCommand extends Command {
+  AndroidCommand() {
+    argParser.addFlag(
+      'run',
+      abbr: 'y',
+      negatable: false,
+      help: 'Run Flutter app after emulator launches',
+    );
+  }
+
   @override
   final name = 'a';
 
   @override
-  final description = 'Handles Android-related operations';
+  final description = 'Launch Android emulators interactively and optionally run Flutter apps. '
+      'Lists available AVDs and allows selection from the command line.';
 
   @override
   FutureOr run() async {
+    final shouldRunApp = argResults?['run'] ?? false;
+    
     try {
       final emulatorPath = await _findEmulatorPath();
       final emulators = await _listEmulators(emulatorPath);
@@ -31,7 +43,7 @@ class AndroidCommand extends Command {
       }
 
       print('\nLaunching emulator: ${emulators[selectedIndex]}...');
-      await _launchEmulator(emulators[selectedIndex]);
+      await _launchEmulator(emulators[selectedIndex], shouldRunApp);
     } catch (e) {
       print('Error: ${e.toString()}');
       exit(1);
@@ -82,13 +94,56 @@ class AndroidCommand extends Command {
     return selection - 1;
   }
 
-  Future<void> _launchEmulator(String emulatorName) async {
+  Future<void> _launchEmulator(String emulatorName, bool shouldRunApp) async {
     try {
-      await Process.start('emulator', ['-avd', emulatorName]);
-      // Don't wait for the process to complete since emulator runs continuously
-      exit(0); // Exit successfully after launching
+      final emulator = await Process.start('emulator', ['-avd', emulatorName]);
+      print('\nWaiting for emulator to boot...');
+      
+      await _waitForEmulatorBoot();
+      print('Emulator is ready!');
+      
+      if (shouldRunApp) {
+        await _runFlutterApp();
+      } else {
+        exit(0);
+      }
     } catch (e) {
       throw 'Failed to launch emulator: $e';
+    }
+  }
+
+  Future<void> _waitForEmulatorBoot() async {
+    bool isBooted = false;
+    while (!isBooted) {
+      final result = await Process.run(
+        'adb',
+        ['shell', 'getprop', 'sys.boot_completed'],
+        runInShell: true,
+      );
+      
+      if (result.stdout.toString().trim() == '1') {
+        isBooted = true;
+      } else {
+        await Future.delayed(Duration(seconds: 2));
+      }
+    }
+  }
+
+  Future<void> _runFlutterApp() async {
+    try {
+      print('\nRunning Flutter app...');
+      final flutter = await Process.start(
+        'flutter',
+        ['run'],
+        runInShell: true,
+        mode: ProcessStartMode.inheritStdio,
+      );
+      
+      // Wait for the Flutter process to complete
+      await flutter.exitCode;
+      exit(0);
+    } catch (e) {
+      throw 'Failed to run Flutter app: $e';
     }
   }
 }

@@ -4,14 +4,26 @@ import 'dart:io';
 import 'package:args/command_runner.dart';
 
 class IPhoneCommand extends Command {
+  IPhoneCommand() {
+    argParser.addFlag(
+      'run',
+      abbr: 'y',
+      negatable: false,
+      help: 'Run Flutter app after simulator launches',
+    );
+  }
+
   @override
   final name = 'i';
 
   @override
-  final description = 'Handles iPhone-related operations';
+  final description = 'Launch iOS simulators interactively and optionally run Flutter apps. '
+      'Lists available simulators and allows selection from the command line.';
 
   @override
   FutureOr run() async {
+    final shouldRunApp = argResults?['run'] ?? false;
+    
     try {
       final simulatorPath = await _findSimulatorPath();
       final simulators = await _listSimulators(simulatorPath);
@@ -31,7 +43,7 @@ class IPhoneCommand extends Command {
       }
 
       print('\nLaunching simulator: ${simulators[selectedIndex]}...');
-      await _launchSimulator(simulators[selectedIndex]);
+      await _launchSimulator(simulators[selectedIndex], shouldRunApp);
     } catch (e) {
       print('Error: ${e.toString()}');
       exit(1);
@@ -90,21 +102,52 @@ class IPhoneCommand extends Command {
     return selection - 1;
   }
 
-  Future<void> _launchSimulator(String simulatorName) async {
-    final result = await Process.run(
+  Future<void> _launchSimulator(String simulatorName, bool shouldRunApp) async {
+    // First, check if the simulator is already booted
+    final bootedDevices = await Process.run(
       'xcrun',
-      ['simctl', 'boot', simulatorName],
+      ['simctl', 'list', 'devices', 'booted'],
       runInShell: true,
     );
-    if (result.exitCode != 0) {
-      throw 'Failed to launch simulator: ${result.stderr}';
+
+    bool isBooted = bootedDevices.stdout.toString().contains(simulatorName);
+
+    if (!isBooted) {
+      final result = await Process.run(
+        'xcrun',
+        ['simctl', 'boot', simulatorName],
+        runInShell: true,
+      );
+      if (result.exitCode != 0) {
+        throw 'Failed to launch simulator: ${result.stderr}';
+      }
     }
 
-    // Open Simulator.app to display the booted device
+    // Open Simulator.app to display the device
     await Process.run(
       'open',
       ['-a', 'Simulator'],
       runInShell: true,
     );
+
+    if (shouldRunApp) {
+      await _runFlutterApp();
+    }
+  }
+
+  Future<void> _runFlutterApp() async {
+    try {
+      print('\nRunning Flutter app...');
+      final flutter = await Process.start(
+        'flutter',
+        ['run'],
+        runInShell: true,
+        mode: ProcessStartMode.inheritStdio,
+      );
+      
+      await flutter.exitCode;
+    } catch (e) {
+      throw 'Failed to run Flutter app: $e';
+    }
   }
 }
