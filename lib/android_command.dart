@@ -96,7 +96,7 @@ class AndroidCommand extends Command {
 
   Future<void> _launchEmulator(String emulatorName, bool shouldRunApp) async {
     try {
-      final emulator = await Process.start('emulator', ['-avd', emulatorName]);
+      await Process.start('emulator', ['-avd', emulatorName]);
       print('\nWaiting for emulator to boot...');
 
       await _waitForEmulatorBoot();
