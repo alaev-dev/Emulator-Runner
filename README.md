@@ -6,7 +6,9 @@
 
 ### Using Homebrew (recommended)
 ```bash
-brew install erun
+git clone git@github.com:alaev-dev/erun.git
+cd erun
+brew install --build-from-source $(pwd)/Formula/erun.rb
 ```
 
 ### Manual Installation
