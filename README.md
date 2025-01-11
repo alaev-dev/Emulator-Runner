@@ -5,6 +5,7 @@
 ## Usage
 
 ⚡️ `erun i` - Instantly fire up iOS simulators
+
 🤖 `erun a` - Launch Android emulators at light speed
 
 ## Requirements
