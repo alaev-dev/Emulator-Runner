@@ -17,13 +17,13 @@ class IPhoneCommand extends Command {
   final name = 'i';
 
   @override
-  final description = 'Launch iOS simulators interactively and optionally run Flutter apps. '
-      'Lists available simulators and allows selection from the command line.';
+  final description =
+      'Launch iOS simulators interactively and optionally run Flutter apps. ';
 
   @override
   FutureOr run() async {
     final shouldRunApp = argResults?['run'] ?? false;
-    
+
     try {
       final simulatorPath = await _findSimulatorPath();
       final simulators = await _listSimulators(simulatorPath);
@@ -35,7 +35,8 @@ class IPhoneCommand extends Command {
       }
 
       _displaySimulators(simulators);
-      final selectedIndex = await _getValidSimulatorSelection(simulators.length);
+      final selectedIndex =
+          await _getValidSimulatorSelection(simulators.length);
 
       if (selectedIndex == null) {
         print('Invalid selection. Operation cancelled.');
@@ -61,7 +62,7 @@ class IPhoneCommand extends Command {
 
   Future<List<String>> _listSimulators(String xcrunPath) async {
     final result = await Process.run(
-      'xcrun', 
+      'xcrun',
       ['simctl', 'list', 'devices', 'available', '--json'],
       runInShell: true,
     );
@@ -144,7 +145,7 @@ class IPhoneCommand extends Command {
         runInShell: true,
         mode: ProcessStartMode.inheritStdio,
       );
-      
+
       await flutter.exitCode;
     } catch (e) {
       throw 'Failed to run Flutter app: $e';

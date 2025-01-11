@@ -17,13 +17,13 @@ class AndroidCommand extends Command {
   final name = 'a';
 
   @override
-  final description = 'Launch Android emulators interactively and optionally run Flutter apps. '
-      'Lists available AVDs and allows selection from the command line.';
+  final description =
+      'Launch Android emulators interactively and optionally run Flutter apps.';
 
   @override
   FutureOr run() async {
     final shouldRunApp = argResults?['run'] ?? false;
-    
+
     try {
       final emulatorPath = await _findEmulatorPath();
       final emulators = await _listEmulators(emulatorPath);
@@ -98,10 +98,10 @@ class AndroidCommand extends Command {
     try {
       final emulator = await Process.start('emulator', ['-avd', emulatorName]);
       print('\nWaiting for emulator to boot...');
-      
+
       await _waitForEmulatorBoot();
       print('Emulator is ready!');
-      
+
       if (shouldRunApp) {
         await _runFlutterApp();
       } else {
@@ -120,7 +120,7 @@ class AndroidCommand extends Command {
         ['shell', 'getprop', 'sys.boot_completed'],
         runInShell: true,
       );
-      
+
       if (result.stdout.toString().trim() == '1') {
         isBooted = true;
       } else {
@@ -138,7 +138,7 @@ class AndroidCommand extends Command {
         runInShell: true,
         mode: ProcessStartMode.inheritStdio,
       );
-      
+
       // Wait for the Flutter process to complete
       await flutter.exitCode;
       exit(0);
