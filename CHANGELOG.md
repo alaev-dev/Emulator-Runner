@@ -1,3 +1,6 @@
 ## 1.0.0
 
-- Initial version.
+🎉 Initial Release
+- Seamless iOS simulator management
+- Lightning-fast Android emulator controls
+- Streamlined developer experience
