@@ -1,7 +1,7 @@
 name: erun
 description: A CLI tool to launch iOS simulators and Android emulators with ease. a
 version: 1.0.0
-# repository: https://github.com/my_org/my_repo
+repository: https://github.com/alaev-dev/erun
 
 environment:
   sdk: ^3.6.0
