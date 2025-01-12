@@ -61,15 +61,13 @@ brew install --build-from-source $(pwd)/Formula/erun.rb
 ### Launch iOS Simulator (macOS only)
 
 ```bash
-erun i # Launch iOS simulator
-erun i -y # Launch iOS simulator and run Flutter app
+erun i # Launch iOS simulator and run Flutter app
 ```
 
 ### Launch Android Emulator
 
 ```bash
-erun a # Launch Android emulator
-erun a -y # Launch Android emulator and run Flutter app
+erun a # Launch Android emulator and run Flutter app
 ```
 
 ### Options
