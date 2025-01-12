@@ -1,8 +1,8 @@
 class Erun < Formula
   desc "CLI tool to launch iOS simulators and Android emulators"
   homepage "https://github.com/alaev-dev/erun"
-  url "https://github.com/alaev-dev/erun/archive/refs/tags/v1.0.1.tar.gz"
-  sha256 "9fafec0ff1be81d72a4eae5e0f040b6d809b568732f6950d628cbac3fc4b81e7"
+  url "https://github.com/alaev-dev/erun/archive/refs/tags/v1.0.8.tar.gz"
+  sha256 "965b4ad0cf01a1a4678ab29dbf966e28157477633122984456cc4416f8456012"
   license "MIT"
   depends_on "dart-sdk"
 
