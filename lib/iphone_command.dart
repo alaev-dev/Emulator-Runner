@@ -2,35 +2,27 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
+import 'package:erun/util/platform_utils.dart';
 
 class IPhoneCommand extends Command {
-  IPhoneCommand() {
-    argParser.addFlag(
-      'run',
-      abbr: 'y',
-      negatable: false,
-      help: 'Run Flutter app after simulator launches',
-    );
-  }
-
   @override
   final name = 'i';
 
   @override
   final description =
-      'Launch iOS simulators interactively and optionally run Flutter apps. ';
+      'Launch iOS simulators interactively and after run Flutter apps.';
 
   @override
   FutureOr run() async {
-    final shouldRunApp = argResults?['run'] ?? false;
+    final shouldRunApp = true;
+    PlatformUtils.validateIosSupport();
 
     try {
       final simulatorPath = await _findSimulatorPath();
       final simulators = await _listSimulators(simulatorPath);
 
       if (simulators.isEmpty) {
-        print('No iOS simulators found. '
-            'Please create one using Xcode.');
+        print('No iOS simulators found. Please create one using Xcode.');
         return;
       }
 
@@ -44,7 +36,11 @@ class IPhoneCommand extends Command {
       }
 
       print('\nLaunching simulator: ${simulators[selectedIndex]}...');
-      await _launchSimulator(simulators[selectedIndex], shouldRunApp);
+      await _launchSimulator(simulators[selectedIndex]);
+
+      if (shouldRunApp) {
+        await _runFlutterApp();
+      }
     } catch (e) {
       print('Error: ${e.toString()}');
       exit(1);
@@ -103,7 +99,7 @@ class IPhoneCommand extends Command {
     return selection - 1;
   }
 
-  Future<void> _launchSimulator(String simulatorName, bool shouldRunApp) async {
+  Future<void> _launchSimulator(String simulatorName) async {
     // First, check if the simulator is already booted
     final bootedDevices = await Process.run(
       'xcrun',
@@ -130,10 +126,6 @@ class IPhoneCommand extends Command {
       ['-a', 'Simulator'],
       runInShell: true,
     );
-
-    if (shouldRunApp) {
-      await _runFlutterApp();
-    }
   }
 
   Future<void> _runFlutterApp() async {

@@ -2,27 +2,20 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:args/command_runner.dart';
+import 'package:erun/util/platform_utils.dart';
 
 class AndroidCommand extends Command {
-  AndroidCommand() {
-    argParser.addFlag(
-      'run',
-      abbr: 'y',
-      negatable: false,
-      help: 'Run Flutter app after emulator launches',
-    );
-  }
-
   @override
   final name = 'a';
 
   @override
   final description =
-      'Launch Android emulators interactively and optionally run Flutter apps.';
+      'Launch Android emulators interactively and after run Flutter apps.';
 
   @override
   FutureOr run() async {
-    final shouldRunApp = argResults?['run'] ?? false;
+    final shouldRunApp = true;
+    PlatformUtils.validateAndroidSupport();
 
     try {
       final emulatorPath = await _findEmulatorPath();
@@ -43,7 +36,11 @@ class AndroidCommand extends Command {
       }
 
       print('\nLaunching emulator: ${emulators[selectedIndex]}...');
-      await _launchEmulator(emulators[selectedIndex], shouldRunApp);
+      await _launchEmulator(emulators[selectedIndex]);
+
+      if (shouldRunApp) {
+        await _runFlutterApp();
+      }
     } catch (e) {
       print('Error: ${e.toString()}');
       exit(1);
@@ -94,19 +91,13 @@ class AndroidCommand extends Command {
     return selection - 1;
   }
 
-  Future<void> _launchEmulator(String emulatorName, bool shouldRunApp) async {
+  Future<void> _launchEmulator(String emulatorName) async {
     try {
       await Process.start('emulator', ['-avd', emulatorName]);
       print('\nWaiting for emulator to boot...');
 
       await _waitForEmulatorBoot();
       print('Emulator is ready!');
-
-      if (shouldRunApp) {
-        await _runFlutterApp();
-      } else {
-        exit(0);
-      }
     } catch (e) {
       throw 'Failed to launch emulator: $e';
     }

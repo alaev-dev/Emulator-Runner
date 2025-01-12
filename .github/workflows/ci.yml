@@ -1,0 +1,86 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [ main ]
+    tags:
+      - 'v*.*.*'  # Match version tags like v1.0.0
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [created]
+
+env:
+  # Extract version from tag (v1.0.0 -> 1.0.0)
+  VERSION: ${{ github.ref_name != '' && startsWith(github.ref, 'refs/tags/v') && github.ref_name || '0.0.0-dev' }}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+          
+      - name: Install dependencies
+        run: dart pub get
+        
+      - name: Verify formatting
+        run: dart format --output=none --set-exit-if-changed .
+        
+      - name: Analyze project source
+        run: dart analyze
+        
+      - name: Run tests
+        run: dart test
+
+      # Update version in pubspec.yaml
+      - name: Update version
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          sed -i "s/^version: .*/version: $VERSION/" pubspec.yaml
+        
+  build:
+    needs: test
+    if: startsWith(github.ref, 'refs/tags/')
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        include:
+          - os: ubuntu-latest
+            output-name: erun-linux
+            asset-name: erun-linux-${{ github.ref_name }}
+          - os: windows-latest
+            output-name: erun-windows.exe
+            asset-name: erun-windows-${{ github.ref_name }}.exe
+          - os: macos-latest
+            output-name: erun-macos
+            asset-name: erun-macos-${{ github.ref_name }}
+    
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Dart
+        uses: dart-lang/setup-dart@v1
+        with:
+          sdk: stable
+          
+      - name: Install dependencies
+        run: dart pub get
+        
+      - name: Build executable
+        run: dart compile exe bin/erun.dart --define=dart.vm.product=true -O4 --target-os ${{ runner.os }} --strip -o ${{ matrix.output-name }}
+        
+      - name: Upload Release Asset
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ matrix.output-name }}
+          name: Release ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
