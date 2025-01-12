@@ -90,3 +90,37 @@ jobs:
           tag_name: ${{ github.ref_name }}
           draft: false
           prerelease: false
+
+  update-homebrew:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Get release tarball SHA
+        id: sha
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          URL="https://github.com/${{ github.repository }}/archive/refs/tags/$VERSION.tar.gz"
+          TARBALL_SHA=$(curl -sL $URL | shasum -a 256 | cut -d ' ' -f 1)
+          echo "::set-output name=sha::$TARBALL_SHA"
+
+      - name: Update Homebrew formula
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/}
+          sed -i "s|url.*|url \"https://github.com/${{ github.repository }}/archive/refs/tags/${VERSION}.tar.gz\"|" Formula/erun.rb
+          sed -i "s|sha256.*|sha256 \"${{ steps.sha.outputs.sha }}\"|" Formula/erun.rb
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: "chore: update Homebrew formula for ${{ github.ref_name }}"
+          title: "chore: update Homebrew formula for ${{ github.ref_name }}"
+          body: |
+            Updates the Homebrew formula for release ${{ github.ref_name }}
+            
+            - Updates version to ${{ github.ref_name }}
+            - Updates SHA256 hash
+          branch: update-brew-formula
+          delete-branch: true
