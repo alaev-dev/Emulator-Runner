@@ -97,21 +97,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-
-      - name: Get release tarball SHA
-        id: sha
-        run: |
-          VERSION=${GITHUB_REF#refs/tags/}
-          URL="https://github.com/${{ github.repository }}/archive/refs/tags/$VERSION.tar.gz"
-          TARBALL_SHA=$(curl -sL $URL | shasum -a 256 | cut -d ' ' -f 1)
-          echo "::set-output name=sha::$TARBALL_SHA"
-
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.x'
+          
       - name: Update Homebrew formula
         run: |
-          VERSION=${GITHUB_REF#refs/tags/}
-          sed -i "s|url.*|url \"https://github.com/${{ github.repository }}/archive/refs/tags/${VERSION}.tar.gz\"|" Formula/erun.rb
-          sed -i "s|sha256.*|sha256 \"${{ steps.sha.outputs.sha }}\"|" Formula/erun.rb
-
+          VERSION=${GITHUB_REF#refs/tags/v}
+          chmod +x scripts/update_formula.py
+          ./scripts/update_formula.py $VERSION
+          
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
@@ -121,6 +118,6 @@ jobs:
             Updates the Homebrew formula for release ${{ github.ref_name }}
             
             - Updates version to ${{ github.ref_name }}
-            - Updates SHA256 hash
+            - Updates SHA256 hash automatically
           branch: update-brew-formula
           delete-branch: true
