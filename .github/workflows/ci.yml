@@ -74,7 +74,7 @@ jobs:
         run: dart pub get
         
       - name: Build executable
-        run: dart compile exe bin/erun.dart --define=dart.vm.product=true --target-os ${{ runner.os }} -o ${{ matrix.output-name }}
+        run: dart compile exe bin/erun.dart --define=dart.vm.product=true -o ${{ matrix.output-name }}
         
       - name: Upload Release Asset
         uses: softprops/action-gh-release@v1
